@@ -3,13 +3,16 @@ import collections
 import glob
 import os
 import re
+import logging
 
 import PIL
 import pytesseract
 
+logging.getLogger().setLevel(logging.INFO)
+
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 IGNORE = ["the", "of", "a", "b", "c", "d", "e", "f", "and", "is", "s",
-          "in",  "to", "what", "write", "explain", "discuss", "user", "each"]
+          "in",  "to", "what", "write", "explain", "discuss", "user", "each", "for", "by", "are", "an", "that", "calculate", "as", "marks", "has", "show", "any", "i", "give"]
 
 
 def is_valid_directory(parser, arg):
@@ -27,12 +30,22 @@ def arg_parser():
     return args
 
 
-if __name__ == "__main__":
-    args = arg_parser()
-
-    text = pytesseract.image_to_string(PIL.Image.open('test.jpg'))
+def word_list_from_img(img):
+    text = pytesseract.image_to_string(img)
     lowered_text = text.lower()
     word_list = re.sub(r"[^\w]", " ", lowered_text).split()
+    return word_list
+
+
+if __name__ == "__main__":
+    args = arg_parser()
+    word_list = []
+
+    for file in glob.glob(args["directory"] + "\\*"):
+        logging.info("Reading characters from file %s", file)
+        img = PIL.Image.open(file)
+        word_list = word_list + word_list_from_img(img)
+
     counted_list = dict(collections.Counter(word_list))
     filtered_list = {k: v for k, v in counted_list.items()
                      if k not in IGNORE}
