@@ -8,12 +8,17 @@ import re
 
 import PIL
 import pytesseract
+import nltk
 
 logging.getLogger().setLevel(logging.INFO)
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
-IGNORE = ["the", "of", "a", "b", "c", "d", "e", "f", "and", "is", "s",
-          "in",  "to", "what", "write", "explain", "discuss", "user", "each", "for", "by", "are", "an", "that", "calculate", "as", "marks", "has", "show", "any", "i", "give"]
+IGNORE = [
+    "i", "ii", "iii", "iv",
+    "a", "b", "c", "d", "e",
+    "marks", "questions", "answers", "candidates", "fall", "spring",
+    "pokhara", "notes", "university", "bachelor", "semester",
+]
 
 
 def is_valid_directory(parser, arg):
@@ -47,17 +52,24 @@ if __name__ == "__main__":
         img = PIL.Image.open(file)
         word_list = word_list + word_list_from_img(img)
 
-    logging.info("Couting the number of each words")
-    counted_list = dict(collections.Counter(word_list))
-    logging.info("Filtering the words")
-    filtered_list = {k: v for k, v in counted_list.items()
-                     if k not in IGNORE}
-    logging.info("Sorting the words")
-    sorted_list = sorted(filtered_list.items(), key=lambda kv: kv[1])
-    logging.info("Writing to csv file")
+    logging.info("Filtering the words using nltk")
+    filtered_list = []
+    tags = nltk.pos_tag(word_list)
+    for tag in tags:
+        if tag[1] in ("NN", "NNS"):
+            filtered_list.append(tag[0])
 
+    logging.info("Filtering the words in ignore list")
+    filtered_list = [k for k in filtered_list if k not in IGNORE]
+
+    logging.info("Couting the number of each words")
+    counted_list = dict(collections.Counter(filtered_list))
+
+    logging.info("Sorting the words")
+    sorted_list = sorted(counted_list.items(), key=lambda kv: kv[1])
+
+    logging.info("Writing to csv file")
     with open(args["output"], "w", newline='') as file:
         writer = csv.writer(file)
         for word in sorted_list:
-            print(word)
             writer.writerow([word[0], word[1]])
