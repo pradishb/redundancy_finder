@@ -1,9 +1,10 @@
 import argparse
 import collections
+import csv
 import glob
+import logging
 import os
 import re
-import logging
 
 import PIL
 import pytesseract
@@ -23,8 +24,8 @@ def is_valid_directory(parser, arg):
 
 def arg_parser():
     parser = argparse.ArgumentParser(description="redundancy_finder")
-    parser.add_argument("-d", dest="directory", required=True,
-                        help="directory to images",
+    parser.add_argument("-o", "--output", required=True)
+    parser.add_argument("-d", "--directory", required=True,
                         type=lambda x: is_valid_directory(parser, x))
     args = vars(parser.parse_args())
     return args
@@ -42,13 +43,21 @@ if __name__ == "__main__":
     word_list = []
 
     for file in glob.glob(args["directory"] + "\\*"):
-        logging.info("Reading characters from file %s", file)
+        logging.info("Reading characters from %s", file)
         img = PIL.Image.open(file)
         word_list = word_list + word_list_from_img(img)
 
+    logging.info("Couting the number of each words")
     counted_list = dict(collections.Counter(word_list))
+    logging.info("Filtering the words")
     filtered_list = {k: v for k, v in counted_list.items()
                      if k not in IGNORE}
-
+    logging.info("Sorting the words")
     sorted_list = sorted(filtered_list.items(), key=lambda kv: kv[1])
-    print(sorted_list)
+    logging.info("Writing to csv file")
+
+    with open(args["output"], "w", newline='') as file:
+        writer = csv.writer(file)
+        for word in sorted_list:
+            print(word)
+            writer.writerow([word[0], word[1]])
