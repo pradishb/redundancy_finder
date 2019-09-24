@@ -47,10 +47,13 @@ if __name__ == "__main__":
     args = arg_parser()
     word_list = []
 
-    for file in glob.glob(args["directory"] + "\\*"):
-        logging.info("Reading characters from %s", file)
-        img = PIL.Image.open(file)
-        word_list = word_list + word_list_from_img(img)
+    for file in glob.glob(os.path.join(args["directory"], "*")):
+        try:
+            logging.info("Reading characters from %s", file)
+            img = PIL.Image.open(file)
+            word_list = word_list + word_list_from_img(img)
+        except OSError:
+            pass
 
     logging.info("Filtering the words using nltk")
     filtered_list = []
